@@ -1,9 +1,10 @@
 # Import javascript modules
-from js import THREE, window, document, Object, console
+from js import THREE, window, document, Object
 # Import pyscript / pyodide modules
 from pyodide.ffi import create_proxy, to_js
 # Import python module
 import math
+
 
 #-----------------------------------------------------------------------
 # USE THIS FUNCTION TO WRITE THE MAIN PROGRAM
@@ -11,7 +12,7 @@ def main():
     #-----------------------------------------------------------------------
     # VISUAL SETUP
     # Declare the variables
-    global renderer, scene, camera, controls,composer,layers
+    global renderer, scene, camera, controls,composer
     
     #Set up the renderer
     renderer = THREE.WebGLRenderer.new()
@@ -23,8 +24,9 @@ def main():
     scene = THREE.Scene.new()
     back_color = THREE.Color.new(0.1,0.1,0.1)
     scene.background = back_color
-    camera = THREE.PerspectiveCamera.new(75, window.innerWidth/window.innerHeight, 0.1, 1000)
-    camera.position.z = 70
+    camera = THREE.OrthographicCamera.new(window.innerWidth / - 8, window.innerWidth / 8, window.innerHeight / 8, window.innerHeight / - 8, 1, 1000)
+    camera.position.z = 100
+    
     scene.add(camera)
 
     # Graphic Post Processing
@@ -37,153 +39,500 @@ def main():
     #-----------------------------------------------------------------------
     # YOUR DESIGN / GEOMETRY GENERATION
     # Geometry Creation
-    layers = {"maximum_iterations": 3}
+    #Declare parameters
+ 
+######################
+    global length , width, total, geometry, Hexa , shape, HexaSettings, Hexas, Hexa_lines
+    
+    Hexas = []
+    Hexa_lines = []
+     
+    length = 2.5*1
+    width = 1.5*1
+    total = 3*1
 
     
-    layers = Object.fromEntries(to_js(layers))
-  
-    global max_iterations
-    max_iterations = layers.maximum_iterations
+    HexaSettings = {
+        "steps": 1,
+        "depth": length,
+        "distance": length*4,
+        "distanceToX": 2*length,
+        "distanceToY": 2*width ,
+        
+        "bevelEnabled": False,
+        "bevelThickness": 1,
+        "bevelSize": 1,
+        "bevelOffset": 1.3,
+        "bevelSegments": 1,
+        "Horizontal":10,
+        "Vertical": 10,
+        "Depth_z": 3
+    }
 
+    HexaSettings = Object.fromEntries(to_js(HexaSettings))
     
     
-    my_axiom_system = system(0, max_iterations , "X")
+    # create material
+    global material, line_material, line_color
+    color = THREE.Color.new("rgb(169,115,8)")
+    material = THREE.MeshBasicMaterial.new()
+    material.transparent = False
+    material.opacity = 0.5
+    material.color = color
     
+    line_material = THREE.LineBasicMaterial.new()
+    line_material.color = THREE.Color.new("rgb(0,0,0)")
+    
+    
+    
+        
+    
+    
+    ##############
 
-    console.log(my_axiom_system)
-
-    # Set up GUI
+    
+  # Set up GUI
     gui = window.dat.GUI.new()
     param_folder = gui.addFolder('Parameters')
-    param_folder.add(layers, "maximum_iterations" ,0,10,1)
-    param_folder.open()
+    param_folder.add(HexaSettings, 'steps', 0,20,1) # 3-> ist step 1 und 2 ist range
+    param_folder.add(HexaSettings, 'Horizontal', 1,15,1)
+    param_folder.add(HexaSettings, 'Vertical', 1,15,1)
+    param_folder.add(HexaSettings, 'Depth_z', 1,10,1)
+    param_folder.add(HexaSettings, 'depth', -10,20)
+    param_folder.add(HexaSettings, 'distance', 1,20,1)
+    param_folder.add(HexaSettings, 'bevelOffset', 1,3,0.01)
+    
 
-    draw_system((my_axiom_system), THREE.Vector3.new(0,0,0))
+    param_folder.open()
     
 
 
-    #-----------------------------------------------------------------------
+    
+###############
+  
+    
+
+    # generating Hexagons using loop
+    
+    
+    global x,y,z, ax, cz
+    x=0
+    y=0
+    z=0
+    ax = 1
+    by = 1
+    cz = 1
+   
+
+    for w in range(1,HexaSettings.Horizontal): 
+        for v in range(HexaSettings.Depth_z):
+            for i in range(HexaSettings.Vertical):  
+                
+                shape = THREE.Shape.new()
+                shape.moveTo( 0,0 )
+                shape.lineTo( -width, length)
+                shape.lineTo( width, length )
+                shape.lineTo( total, 0 )
+
+                shape.lineTo( width, -length)
+                shape.lineTo( -width, -length )
+                shape.lineTo( -total, 0 )
+                shape.lineTo( -width, length)
+                shape.lineTo( 0, 0 )
+                
+                
+               
+                
+                geometry = THREE.ExtrudeGeometry.new( shape, HexaSettings )
+               
+               
+                
+                
+                if w % 2 == 0 and i % 2 == 0 :
+                    
+                    
+                                    
+                    shape = THREE.Shape.new()
+                    shape.moveTo( 0,0 )
+                    shape.lineTo( -width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset)
+                    shape.lineTo( width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset )
+                    shape.lineTo( total/HexaSettings.bevelOffset, 0 )
+
+                    shape.lineTo( width/HexaSettings.bevelOffset, -length/HexaSettings.bevelOffset)
+                    shape.lineTo( -width/HexaSettings.bevelOffset, -length/HexaSettings.bevelOffset)
+                    shape.lineTo( -total/HexaSettings.bevelOffset, 0 )
+                    shape.lineTo( -width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset)
+                    shape.lineTo( 0, 0 )
+                    
+                    
+                    geometry = THREE.ExtrudeGeometry.new( shape, HexaSettings )
+                    
+                    geometry.scale(ax, by, cz)
+                    HexaSettings.bevelOffset*i
+                    
+                    
+                    geometry.translate(x,2*HexaSettings.distanceToY*i+y,
+                                   z*v)
+                    color_2 = THREE.Color.new("rgb(280,200,40)")
+                    material_2 = THREE.MeshBasicMaterial.new()
+                    material_2.transparent = False
+                    material_2.opacity = 0.5
+                    material_2.color = color_2
+                    
+                    Hexa = THREE.Mesh.new( geometry, material_2 ) 
+                    
+                    
+                    Hexas.append(Hexa)
+                    scene.add( Hexa )
+                    
+                    edges = THREE.EdgesGeometry.new( Hexa.geometry )
+                    line = THREE.LineSegments.new( edges, line_material)
+                    Hexa_lines.append(line)
+                    scene.add( line )
+
+                    
+                    
+                    
+                else:
+                    geometry.translate(x,2*HexaSettings.distanceToY*i+y,z*v)
+                    
+                   
+                    
+
+                    Hexa = THREE.Mesh.new( geometry, material ) 
+                    #lines = THREE.LineSegments.new(wireframe)
+                    #Hexa_lines.append(lines)
+                    Hexas.append(Hexa)
+                    scene.add( Hexa )
+                    #scene.add( Hexa_lines )
+                
+                    edges = THREE.EdgesGeometry.new( Hexa.geometry )
+                    line = THREE.LineSegments.new( edges, line_material)
+                    Hexa_lines.append(line)
+                    scene.add( line )
+
+                
+
+                    
+                
+            z = HexaSettings.distance
+            #cz = HexaSettings.depth  /HexaSettings.depth
+            
+    
+
+     
+         
+            
+        x = HexaSettings.distanceToX*w
+        y= HexaSettings.distanceToY * w
+        
+        cz = (HexaSettings.depth /HexaSettings.depth)/2
+        
+      
+        
+        
+
+ 
+
+
+    
+    
+
+
+
+   
+    #------------------------------
+    # -----------------------------------------
     # USER INTERFACE
     # Set up Mouse orbit control
     controls = THREE.OrbitControls.new(camera, renderer.domElement)
 
-
+    ##################
+   
+    
+    
+    
     #-----------------------------------------------------------------------
     # RENDER + UPDATE THE SCENE AND GEOMETRIES
     render()
     
 #-----------------------------------------------------------------------
 # HELPER FUNCTIONS
-# Define RULES in a function which takes one SYMBOL and applies rules generation
-def generate(symbol):
-    if symbol == "X":
-        return "F[+X][-X]"
-    elif symbol == "F":
-        return "F"
-    elif symbol == "+":
-        return "+"
-    elif symbol == "-":
-        return "-"
-    elif symbol == "[":
-        return "["
-    elif symbol == "]":
-        return "]"
-# A recursive fundtion, which taken an AXIOM as an inout and runs the generate function for each symbol
-            #global         #anzahl Layer       global
-def system(current_iteration, max_iterations, axiom):
-    current_iteration += 1
-    new_axiom = ""
-    for symbol in axiom:
-        new_axiom += generate(symbol)
-    if current_iteration >= max_iterations:
-        return new_axiom #letztes Axiom
-    else:
-        return system(current_iteration, max_iterations, new_axiom)
-                                                            # new axiom for the next layer
-global scene
-def draw_system(axiom, start_pt):
-    move_vec = THREE.Vector3.new(0,10,0)
-    dist = move_vec.y
-    old_states = []
-    old_move_vecs = []
-    lines = []
-    circle = []
-    # generating multiple points 
-    for symbol in axiom:
-        if symbol == "F" or symbol == "X":
-            old = THREE.Vector3.new(start_pt.x, start_pt.y, start_pt.z)
-            new_pt = THREE.Vector3.new(start_pt.x, start_pt.y, start_pt.z)
-            new_pt = new_pt.add(move_vec)
-            line = []
-            line.append(old)
-            line.append(new_pt)
-            lines.append(line)
-            
-            
-            start_pt = new_pt
-            # define the generated points as midpoints for circles
-            global DrawCircle
-            def DrawCircle(start_pt, dist,):
-                curve = THREE.EllipseCurve.new(start_pt.x, start_pt.y,dist,dist)
-          
-                points = curve.getPoints(50)
+#update the cubes
 
-                geometry = THREE.BufferGeometry.new().setFromPoints(points)
+
+def update_Hexas():
+    global Hexas, Hexa_lines, material, line_material
+    # make sure you dont have zero cubes
+    if len(Hexas) != 0:
+        if len(Hexas) != HexaSettings.Horizontal:
+            for Hexa in Hexas: 
+                scene.remove(Hexa)
+            for lines in Hexa_lines: 
+                scene.remove(lines)
                 
-                material = THREE.LineBasicMaterial.new( THREE.Color.new(0x0000ff))
-                ellipse = THREE.Line.new(geometry, material)
+        if len(Hexas) != HexaSettings.Vertical:
+            for Hexa in Hexas: 
+                scene.remove(Hexa)
+            for lines in Hexa_lines: 
+                scene.remove(lines)
                 
-                # if radius is greater than the number, show the circles
-                if dist > 1.3:
-                    DrawCircle((start_pt),dist/1.3)
+        if len(Hexas) != HexaSettings.Depth_z:
+            for Hexa in Hexas: 
+                scene.remove(Hexa)
+            for lines in Hexa_lines: 
+                scene.remove(lines)
                 
-                scene.add(ellipse)
                 
-         
-            #outer Circle
-            DrawCircle(start_pt, dist/1.2)
+                Hexas = []
+                Hexa_lines = []
+                
+
+            
+           
+        
+            global x,y,z,  ax, cz
+            x=0
+            y=0
+            z=0
+            ax = 1
+            by = 1
+            cz = 1
+        
+
+            for w in range(1,HexaSettings.Horizontal): 
+                for v in range(HexaSettings.Depth_z):
+                    for i in range(HexaSettings.Vertical):  
+                        
+                        shape = THREE.Shape.new()
+                        shape.moveTo( 0,0 )
+                        shape.lineTo( -width, length)
+                        shape.lineTo( width, length )
+                        shape.lineTo( total, 0 )
+
+                        shape.lineTo( width, -length)
+                        shape.lineTo( -width, -length )
+                        shape.lineTo( -total, 0 )
+                        shape.lineTo( -width, length)
+                        shape.lineTo( 0, 0 )
+                        
+                        
+                    
+                        
+                        geometry = THREE.ExtrudeGeometry.new( shape, HexaSettings )
+                        
+                    
+                        
+                        if w % 2 == 0 and i % 2 == 0 :
+                            
+                            
+                                            
+                            shape = THREE.Shape.new()
+                            shape.moveTo( 0,0 )
+                            shape.lineTo( -width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset)
+                            shape.lineTo( width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset )
+                            shape.lineTo( total/HexaSettings.bevelOffset, 0 )
+
+                            shape.lineTo( width/HexaSettings.bevelOffset, -length/HexaSettings.bevelOffset)
+                            shape.lineTo( -width/HexaSettings.bevelOffset, -length/HexaSettings.bevelOffset)
+                            shape.lineTo( -total/HexaSettings.bevelOffset, 0 )
+                            shape.lineTo( -width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset)
+                            shape.lineTo( 0, 0 )
+                            
+                            
+                            geometry = THREE.ExtrudeGeometry.new( shape, HexaSettings )
+                            
+                            geometry.scale(ax, by, cz)
+                            HexaSettings.bevelOffset*i
+                            
+                            
+                            geometry.translate(x,2*HexaSettings.distanceToY*i+y,
+                                        z*v)
+                            color_2 = THREE.Color.new("rgb(280,200,40)")
+                            material_2 = THREE.MeshBasicMaterial.new()
+                            material_2.transparent = False
+                            material_2.opacity = 0.5
+                            material_2.color = color_2
+                            
+                            Hexa = THREE.Mesh.new( geometry, material_2 ) 
+                            
+                            
+                            Hexas.append(Hexa)
+                            scene.add( Hexa )
+                            
+                            edges = THREE.EdgesGeometry.new( Hexa.geometry )
+                            line = THREE.LineSegments.new( edges, line_material)
+                            Hexa_lines.append(line)
+                            scene.add( line )
+                                
+                            
+                            
+                        else:
+                            geometry.translate(x,2*HexaSettings.distanceToY*i+y,z*v)
+                            
+                            
+                            
+
+                            Hexa = THREE.Mesh.new( geometry, material ) 
+                            #lines = THREE.LineSegments.new(wireframe)
+                            #Hexa_lines.append(lines)
+                            Hexas.append(Hexa)
+                            scene.add( Hexa )
+                            #scene.add( Hexa_lines )
+                            
+                            edges = THREE.EdgesGeometry.new( Hexa.geometry )
+                            line = THREE.LineSegments.new( edges, line_material)
+                            Hexa_lines.append(line)
+                            scene.add( line )
+
+                        
+
+                            
+                        
+                    z = HexaSettings.distance
+                    #cz = HexaSettings.depth  /HexaSettings.depth
+                    
+            
+
+            
+                
+                    
+                x = HexaSettings.distanceToX*w
+                y= HexaSettings.distanceToY * w
+                
+                cz = (HexaSettings.depth /HexaSettings.depth)/2
+                
+            
+       
+                    
+                
+            
+
+               
+        else: 
+            for i in range(len(Hexas)):
+                Hexa = Hexas[i]
+                line = Hexa_lines[i]
+           
+
+
+                x=0
+                y=0
+                z=0
+                ax = 1
+                by = 1
+                cz = 1
+            
+
+                for w in range(1,HexaSettings.Horizontal): 
+                    for v in range(HexaSettings.Depth_z):
+                        for i in range(HexaSettings.Vertical):  
+                            
+                            shape = THREE.Shape.new()
+                            shape.moveTo( 0,0 )
+                            shape.lineTo( -width, length)
+                            shape.lineTo( width, length )
+                            shape.lineTo( total, 0 )
+
+                            shape.lineTo( width, -length)
+                            shape.lineTo( -width, -length )
+                            shape.lineTo( -total, 0 )
+                            shape.lineTo( -width, length)
+                            shape.lineTo( 0, 0 )
+                            
+                            
+                        
+                            
+                            geometry = THREE.ExtrudeGeometry.new( shape, HexaSettings )
+
+                   
+                            edges = THREE.EdgesGeometry.new( Hexa.geometry )
+                            line = THREE.LineSegments.new( edges, line_material)
+                            Hexa_lines.append(line)
+                            scene.add( line )
+                            
+                            
+                            
+                            if w % 2 == 0 and i % 2 == 0 :
+                                
+                                
+                                                
+                                shape = THREE.Shape.new()
+                                shape.moveTo( 0,0 )
+                                shape.lineTo( -width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset)
+                                shape.lineTo( width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset )
+                                shape.lineTo( total/HexaSettings.bevelOffset, 0 )
+
+                                shape.lineTo( width/HexaSettings.bevelOffset, -length/HexaSettings.bevelOffset)
+                                shape.lineTo( -width/HexaSettings.bevelOffset, -length/HexaSettings.bevelOffset)
+                                shape.lineTo( -total/HexaSettings.bevelOffset, 0 )
+                                shape.lineTo( -width/HexaSettings.bevelOffset, length/HexaSettings.bevelOffset)
+                                shape.lineTo( 0, 0 )
+                                
+                                
+                                geometry = THREE.ExtrudeGeometry.new( shape, HexaSettings )
+                                
+                                geometry.scale(ax, by, cz)
+                                HexaSettings.bevelOffset*i
+                                
+                                
+                                geometry.translate(x,2*HexaSettings.distanceToY*i+y,
+                                            z*v)
+                                color_2 = THREE.Color.new("rgb(280,200,40)")
+                                material_2 = THREE.MeshBasicMaterial.new()
+                                material_2.transparent = False
+                                material_2.opacity = 0.5
+                                material_2.color = color_2
+                                
+                                Hexa = THREE.Mesh.new( geometry, material_2 ) 
+                                
+                                
+                                Hexas.append(Hexa)
+                                scene.add( Hexa )
+                                
+                                edges = THREE.EdgesGeometry.new( Hexa.geometry )
+                                line = THREE.LineSegments.new( edges, line_material)
+                                Hexa_lines.append(line)
+                                scene.add( line )
+                                            
+                                    
+                                
+                                
+                            else:
+                                geometry.translate(x,2*HexaSettings.distanceToY*i+y,z*v)
+                                
+                                
+
+                                Hexa = THREE.Mesh.new( geometry, material ) 
+                                #lines = THREE.LineSegments.new(wireframe)
+                                #Hexa_lines.append(lines)
+                                Hexas.append(Hexa)
+                                scene.add( Hexa )
+                                #scene.add( Hexa_lines )
+                                
+                             
+                    
+
+                            
+                
+                            Hexa.geom = geometry
+                            
+                            edges = THREE.EdgesGeometry.new(Hexa.geom)
+                            line.geom = edges
+                
+            
+
+
+
+
     
-   
-            
-        elif symbol == "+": 
-            move_vec.applyAxisAngle(THREE.Vector3.new(0,0,1), math.pi/4)
-        
-        elif symbol == "-":
-            move_vec.applyAxisAngle(THREE.Vector3.new(0,0,1), -math.pi/2)
-        
-        elif symbol == "[":
-            old_state = THREE.Vector3.new(start_pt.x, start_pt.y, start_pt.z)
-            old_move_vec = THREE.Vector3.new(move_vec.x, move_vec.y, move_vec.z)
-            old_states.append(old_state)
-            old_move_vecs.append(old_move_vec)
-
-        elif symbol == "]":
-            start_pt = THREE.Vector3.new(old_states[-1].x, old_states[-1].y, old_states[-1].z)
-            move_vec = THREE.Vector3.new(old_move_vecs[-1].x, old_move_vecs[-1].y, old_move_vecs[-1].z)
-            old_states.pop(-1)
-            old_move_vecs.pop(-1)
-
-
-
-def update_circle():
-    global max_iterations, layers, scene
-    if max_iterations != layers.maximum_iterations:
-        scene.clear()
-        max_iterations = layers.maximum_iterations
-        my_axiom_system = system(0, max_iterations , "X")
-        draw_system((my_axiom_system), THREE.Vector3.new(0,0,0))
-
-   
-        
-        
-
-
- 
 # Simple render and animate
+
+    
 def render(*args):
     window.requestAnimationFrame(create_proxy(render))
+    update_Hexas()
     controls.update()
-    update_circle()
     composer.render()
 
 # Graphical post-processing
@@ -222,9 +571,6 @@ def on_window_resize(event):
 #RUN THE MAIN PROGRAM
 if __name__=='__main__':
     main()
-    
-    
-    
     
     
     
