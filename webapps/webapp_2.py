@@ -37,13 +37,16 @@ def main():
     #-----------------------------------------------------------------------
     # YOUR DESIGN / GEOMETRY GENERATION
     # Geometry Creation
-    layers = {"maximum_iterations": 3}
+    layers = {"maximum_iterations": 3,
+              "radius": 0.3,
+             }
 
     
     layers = Object.fromEntries(to_js(layers))
   
-    global max_iterations
+    global max_iterations, radiusCirc
     max_iterations = layers.maximum_iterations
+    radiusCirc = layers.radius
 
     
     
@@ -56,9 +59,10 @@ def main():
     gui = window.dat.GUI.new()
     param_folder = gui.addFolder('Parameters')
     param_folder.add(layers, "maximum_iterations" ,0,10,1)
+    param_folder.add(layers, "radius" ,0,10,0.1)
     param_folder.open()
 
-    draw_system((my_axiom_system), THREE.Vector3.new(0,0,0))
+    draw_system((my_axiom_system), THREE.Vector3.new(0,0,0), radiusCirc)
     
 
 
@@ -101,9 +105,10 @@ def system(current_iteration, max_iterations, axiom):
         return system(current_iteration, max_iterations, new_axiom)
                                                             # new axiom for the next layer
 global scene
-def draw_system(axiom, start_pt):
+def draw_system(axiom, start_pt, radiusCirc):
     move_vec = THREE.Vector3.new(0,10,0)
     dist = move_vec.y
+    
     old_states = []
     old_move_vecs = []
     lines = []
@@ -123,7 +128,7 @@ def draw_system(axiom, start_pt):
             start_pt = new_pt
             # define the generated points as midpoints for circles
             global DrawCircle
-            def DrawCircle(start_pt, dist,):
+            def DrawCircle(start_pt, dist,radiusCirc):
                 curve = THREE.EllipseCurve.new(start_pt.x, start_pt.y,dist,dist)
           
                 points = curve.getPoints(50)
@@ -134,14 +139,14 @@ def draw_system(axiom, start_pt):
                 ellipse = THREE.Line.new(geometry, material)
                 
                 # if radius is greater than the number, show the circles
-                if dist > 1.3:
-                    DrawCircle((start_pt),dist/1.3)
+                if dist > radiusCirc:
+                    DrawCircle((start_pt),dist/1.1, radiusCirc)
                 
                 scene.add(ellipse)
                 
          
             #outer Circle
-            DrawCircle(start_pt, dist/1.2)
+            DrawCircle(start_pt, dist/1.2, radiusCirc)
     
    
             
@@ -171,7 +176,17 @@ def update_circle():
         scene.clear()
         max_iterations = layers.maximum_iterations
         my_axiom_system = system(0, max_iterations , "X")
-        draw_system((my_axiom_system), THREE.Vector3.new(0,0,0))
+        draw_system((my_axiom_system), THREE.Vector3.new(0,0,0), radiusCirc)
+        
+
+def update_radius():
+    global layers, scene, radiusCirc
+    if radiusCirc != layers.radius:
+        scene.clear()
+        radiusCirc = layers.radius
+        my_axiom_system = system(0, max_iterations , "X")
+        draw_system((my_axiom_system), THREE.Vector3.new(0,0,0), radiusCirc)
+        
 
    
         
@@ -184,6 +199,7 @@ def render(*args):
     window.requestAnimationFrame(create_proxy(render))
     controls.update()
     update_circle()
+    update_radius()
     composer.render()
 
 # Graphical post-processing
