@@ -94,7 +94,7 @@ def main():
   # Set up GUI
     gui = window.dat.GUI.new()
     param_folder = gui.addFolder('Parameters')
-    param_folder.add(HexaSettings, 'steps', 0,20,1) # 3-> ist step 1 und 2 ist range
+    
     param_folder.add(HexaSettings, 'Horizontal', 1,15,1)
     param_folder.add(HexaSettings, 'Vertical', 1,15,1)
     param_folder.add(HexaSettings, 'Depth_z', 1,10,1)
@@ -216,7 +216,7 @@ def main():
                     
                 
             z = HexaSettings.distance
-            #cz = HexaSettings.depth  /HexaSettings.depth
+           
             
     
 
@@ -263,7 +263,7 @@ def main():
 
 def update_Hexas():
     global Hexas, Hexa_lines, material, line_material
-    # make sure you dont have zero cubes
+    
     if len(Hexas) != 0:
         if len(Hexas) != HexaSettings.Horizontal:
             for Hexa in Hexas: 
@@ -390,7 +390,7 @@ def update_Hexas():
                             
                         
                     z = HexaSettings.distance
-                    #cz = HexaSettings.depth  /HexaSettings.depth
+                   
                     
             
 
@@ -504,11 +504,10 @@ def update_Hexas():
                                 
 
                                 Hexa = THREE.Mesh.new( geometry, material ) 
-                                #lines = THREE.LineSegments.new(wireframe)
-                                #Hexa_lines.append(lines)
+                         
                                 Hexas.append(Hexa)
                                 scene.add( Hexa )
-                                #scene.add( Hexa_lines )
+                           
                                 
                              
                     
